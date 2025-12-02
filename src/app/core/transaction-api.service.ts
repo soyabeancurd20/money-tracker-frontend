@@ -1,13 +1,14 @@
+// src/app/core/transaction-api.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Transaction } from '../models/transaction.model';
-const API = 'https://money-tracker-backend-o18p.onrender.com/api/transactions';
+import { environment } from '../../environments/environment';
+
 @Injectable({ providedIn: 'root' })
 export class TransactionApiService {
+  base = environment.apiBase || 'https://money-tracker-backend-o18p.onrender.com';
   constructor(private http: HttpClient) {}
-  getAll(): Observable<Transaction[]> { return this.http.get<Transaction[]>(API); }
-  create(payload: Omit<Transaction,'id'>) { return this.http.post<Transaction>(API, payload); }
-  update(id:string, patch: Partial<Transaction>) { return this.http.put<Transaction>(`${API}/${id}`, patch); }
-  delete(id:string) { return this.http.delete(`${API}/${id}`); }
+  getAll() { return this.http.get<any[]>(`${this.base}/api/transactions`); }
+  create(payload:any){ return this.http.post(`${this.base}/api/transactions`, payload); }
+  update(id:string, p:any){ return this.http.put(`${this.base}/api/transactions/${id}`, p); }
+  delete(id:string){ return this.http.delete(`${this.base}/api/transactions/${id}`); }
 }
