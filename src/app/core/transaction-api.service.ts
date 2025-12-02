@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Transaction } from '../models/transaction.model';
-const API = 'http://localhost:3000/api/transactions';
+const API = 'https://money-tracker-backend-o18p.onrender.com/api/transactions';
 @Injectable({ providedIn: 'root' })
 export class TransactionApiService {
   constructor(private http: HttpClient) {}
