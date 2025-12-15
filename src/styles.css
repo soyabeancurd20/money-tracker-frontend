@@ -269,3 +269,57 @@ button.danger{
     grid-column: span 12;
   }
 }
+
+/* ---------- TABLE MOBILE FIX ---------- */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.amount-cell {
+  text-align: right;
+  white-space: nowrap; /* 🔑 prevents overlap */
+  font-weight: 600;
+}
+
+.amount-cell .income {
+  color: #16a34a;
+}
+
+.amount-cell .expense {
+  color: #dc2626;
+}
+
+.date-cell {
+  white-space: nowrap;
+}
+
+.date-cell .year {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* ---------- MOBILE OPTIMIZATION ---------- */
+@media (max-width: 600px) {
+
+  .table thead {
+    font-size: 0.75rem;
+  }
+
+  .table td,
+  .table th {
+    padding: 8px 6px;
+  }
+
+  /* Reduce date width */
+  .date-cell {
+    width: 64px;
+  }
+
+  /* Make table scroll-safe if needed */
+  .table {
+    display: block;
+    overflow-x: auto;
+  }
+}
