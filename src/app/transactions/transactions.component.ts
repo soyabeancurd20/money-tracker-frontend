@@ -8,97 +8,142 @@ import { NgForm } from '@angular/forms';
   template: `
   <div class="container">
     <div class="card">
+
+      <!-- HEADER -->
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h2 style="margin:0">Transactions</h2>
-        <div class="small">Manage your income and expenses</div>
+        <h2>Transactions</h2>
+
+        <!-- FILTER -->
+        <select [(ngModel)]="filterMode" (change)="applyFilter()">
+          <option value="current">Current Month</option>
+          <option value="all">All</option>
+        </select>
       </div>
 
-      <div class="tx-layout">
-        <!-- List -->
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-            <div class="small">Showing latest</div>
-            <div class="small">Total: <strong>₱{{ totalAmount | number:'1.0-2' }}</strong></div>
-          </div>
+      <!-- LIST -->
+      <table class="table" style="margin-top:12px;">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Rule</th>
+            <th style="text-align:right">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
 
-          <table class="table" style="margin-top:10px;">
-            <thead><tr><th>Date</th><th>Category</th><th>Note</th><th style="text-align:right">Amount</th><th></th></tr></thead>
-            <tbody>
-              <tr *ngFor="let t of transactions">
-                <td>{{ t.date | date:'mediumDate' }}</td>
-                <td>{{ t.category }}</td>
-                <td class="small">{{ t.note }}</td>
-                <td style="text-align:right;color:{{ t.type==='Expense' ? 'var(--expense)' : 'var(--income)' }}">
-                  {{ t.type === 'Income' ? '+' : '−' }}₱{{ t.amount | number:'1.0-2' }}
-                </td>
-                <td class="actions" style="text-align:right">
-                  <button (click)="startEdit(t)">Edit</button>
-                  <button (click)="confirmDelete(t.id)" style="color:var(--expense)">Delete</button>
-                </td>
-              </tr>
-              <tr *ngIf="transactions.length===0"><td colspan="5" class="empty">No transactions yet — add one below.</td></tr>
-            </tbody>
-          </table>
+        <tbody>
+          <tr *ngFor="let t of filteredTransactions">
+            <td>{{ t.date | date:'mediumDate' }}</td>
+            <td>{{ t.category }}</td>
+            <td>{{ t.type }}</td>
+            <td>{{ t.budgetType || '-' }}</td>
+            <td style="text-align:right">
+              {{ t.type === 'Income' ? '+' : '-' }}₱{{ t.amount | number:'1.0-2' }}
+            </td>
+            <td style="text-align:right">
+              <button (click)="startEdit(t)">Edit</button>
+              <button (click)="confirmDelete(t.id)" style="color:#dc2626">
+                Delete
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredTransactions.length === 0">
+            <td colspan="6" class="empty">
+              No transactions found
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <!-- FORM -->
+      <h3>{{ editId ? 'Edit Transaction' : 'Add Transaction' }}</h3>
+
+      <form #f="ngForm" (ngSubmit)="submit(f)" novalidate>
+
+        <div class="form-row">
+          <select name="type" [(ngModel)]="model.type" required>
+            <option value="Expense">Expense</option>
+            <option value="Income">Income</option>
+          </select>
+
+          <input
+            name="category"
+            [(ngModel)]="model.category"
+            placeholder="Category"
+            required
+          />
         </div>
 
-        <!-- Form -->
-        <div>
-          <div class="card" style="padding:14px;">
-            <h3 style="margin-top:0">{{ editId ? 'Edit transaction' : 'Add transaction' }}</h3>
+        <div class="form-row">
+          <input
+            type="number"
+            name="amount"
+            [(ngModel)]="model.amount"
+            placeholder="Amount"
+            min="0.01"
+            step="0.01"
+            required
+          />
 
-            <form #f="ngForm" (ngSubmit)="submit(f)" novalidate>
-              <div class="form-row" style="margin-bottom:8px;">
-                <select name="type" [(ngModel)]="model.type" required>
-                  <option value="Expense">Expense</option>
-                  <option value="Income">Income</option>
-                </select>
-
-                <input name="category" [(ngModel)]="model.category" placeholder="Category" required />
-              </div>
-
-              <div class="form-row" style="margin-bottom:8px;">
-                <input name="amount" type="number" [(ngModel)]="model.amount" placeholder="Amount" required min="0.01" step="0.01" />
-                <input name="date" type="date" [(ngModel)]="model.date" required />
-              </div>
-
-              <div style="margin-bottom:10px;">
-                <input name="note" [(ngModel)]="model.note" placeholder="Note (optional)" style="width:100%" />
-              </div>
-
-              <div style="display:flex;gap:8px;align-items:center;">
-                <button type="submit" [disabled]="f.invalid" style="background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer">
-                  {{ editId ? 'Update' : 'Add' }}
-                </button>
-
-                <button type="button" (click)="resetForm()" style="padding:10px 12px;border-radius:8px;">Clear</button>
-
-                <button *ngIf="editId" type="button" (click)="cancelEdit()" style="padding:10px 12px;border-radius:8px;">Cancel</button>
-
-                <div style="margin-left:auto" *ngIf="message" class="small">{{ message }}</div>
-              </div>
-
-              <div *ngIf="showErrors" class="help" style="margin-top:8px">Please fill required fields correctly.</div>
-            </form>
-          </div>
+          <input
+            type="date"
+            name="date"
+            [(ngModel)]="model.date"
+            required
+          />
         </div>
-      </div>
+
+        <div class="form-row" *ngIf="model.type === 'Expense'">
+          <select name="budgetType" [(ngModel)]="model.budgetType" required>
+            <option value="Needs">Needs</option>
+            <option value="Wants">Wants</option>
+            <option value="Savings">Savings</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <input
+            name="note"
+            [(ngModel)]="model.note"
+            placeholder="Note (optional)"
+          />
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button type="submit" [disabled]="f.invalid">
+            {{ editId ? 'Update' : 'Add' }}
+          </button>
+          <button type="button" (click)="resetForm()">Clear</button>
+          <button *ngIf="editId" type="button" (click)="cancelEdit()">Cancel</button>
+        </div>
+
+      </form>
     </div>
   </div>
   `
 })
 export class TransactionsComponent implements OnInit {
+
   transactions: Transaction[] = [];
+  filteredTransactions: Transaction[] = [];
+
+  filterMode: 'current' | 'all' = 'current';
+
+  editId: string | null = null;
+
   model: Partial<Transaction> = {
     type: 'Expense',
     category: '',
     amount: undefined,
-    date: new Date().toISOString().slice(0, 10),
-    note: ''
+    date: new Date().toISOString().split('T')[0],
+    note: '',
+    budgetType: 'Needs'
   };
-  editId: string | null = null;
-  message = '';
-  showErrors = false;
-  totalAmount = 0;
 
   constructor(private txApi: TransactionApiService) {}
 
@@ -106,121 +151,108 @@ export class TransactionsComponent implements OnInit {
     this.load();
   }
 
-  // Normalizes backend records to always include `id` and standardized fields
-  private normalize(list: any[]): Transaction[] {
-    return (list || []).map((t: any) => {
-      const dateStr = t.date ? new Date(t.date).toISOString() : new Date().toISOString();
-      return {
-        id: t.id || t._id || String(t._id || t.id || Math.random().toString(36).slice(2,9)),
-        type: t.type,
-        category: t.category,
-        amount: Number(t.amount || 0),
-        date: dateStr,
-        note: t.note || ''
-      } as Transaction;
-    });
-  }
+  /* ---------------- LOAD ---------------- */
 
   load() {
     this.txApi.getAll().subscribe(list => {
-      this.transactions = this.normalize(list).sort((a, b) => +new Date(b.date) - +new Date(a.date));
-      this.computeTotals();
-    }, err => {
-      console.error(err);
-      this.transactions = [];
-      this.computeTotals();
+      this.transactions = list.map((t: any) => ({
+        id: t._id || t.id,
+        type: t.type,
+        category: t.category,
+        amount: Number(t.amount),
+        date: new Date(t.date).toISOString(),
+        note: t.note || '',
+        budgetType: t.budgetType
+      }));
+      this.applyFilter();
     });
   }
 
-  computeTotals() {
-    this.totalAmount = this.transactions.reduce((s, t) => {
-      return s + (t.type === 'Income' ? Number(t.amount) : -Number(t.amount));
-    }, 0);
-  }
+  /* ---------------- FILTER ---------------- */
 
-  submit(form: NgForm) {
-    this.showErrors = false;
-    if (form.invalid) {
-      this.showErrors = true;
+  applyFilter() {
+    if (this.filterMode === 'all') {
+      this.filteredTransactions = [...this.transactions];
       return;
     }
 
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+
+    this.filteredTransactions = this.transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === m && d.getFullYear() === y;
+    });
+  }
+
+  /* ---------------- ADD / UPDATE ---------------- */
+
+  submit(form: NgForm) {
+    if (form.invalid) return;
+
     const payload = {
-      type: (this.model.type || 'Expense') as 'Income' | 'Expense',
-      category: (this.model.category || '').trim(),
+      type: this.model.type!,
+      category: this.model.category!,
       amount: Number(this.model.amount),
       date: new Date(this.model.date!).toISOString(),
-      note: this.model.note || ''
+      note: this.model.note || '',
+      budgetType: this.model.type === 'Expense'
+        ? this.model.budgetType
+        : undefined
     };
 
     if (this.editId) {
-      this.txApi.update(this.editId, payload).subscribe({
-        next: () => {
-          this.message = 'Updated';
-          this.resetForm();
-          this.load();
-          setTimeout(()=> this.message = '', 1600);
-        },
-        error: (err) => {
-          console.error(err);
-          this.message = 'Update failed';
-          setTimeout(()=> this.message = '', 1600);
-        }
+      this.txApi.update(this.editId, payload).subscribe(() => {
+        this.load();
+        this.resetForm();
       });
     } else {
-      this.txApi.create(payload).subscribe({
-        next: () => {
-          this.message = 'Added';
-          this.resetForm();
-          this.load();
-          setTimeout(()=> this.message = '', 1600);
-        },
-        error: (err) => {
-          console.error(err);
-          this.message = 'Add failed';
-          setTimeout(()=> this.message = '', 1600);
-        }
+      this.txApi.create(payload).subscribe(() => {
+        this.load();
+        this.resetForm();
       });
     }
   }
 
+  /* ---------------- EDIT ---------------- */
+
   startEdit(t: Transaction) {
-    // t.date might be ISO string — convert to yyyy-mm-dd for input
-    const iso = new Date(t.date).toISOString();
-    const yyyyMmDd = iso.split('T')[0];
     this.editId = t.id;
-    this.model = { ...t, date: yyyyMmDd, amount: Number(t.amount) } as any;
-    // scroll to form so user notices edit
+    this.model = {
+      ...t,
+      amount: Number(t.amount),
+      date: new Date(t.date).toISOString().split('T')[0]
+    };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   cancelEdit() {
-    this.editId = null;
     this.resetForm();
   }
 
-  resetForm() {
-    this.editId = null;
-    this.model = { type: 'Expense', category: '', amount: undefined, date: new Date().toISOString().slice(0,10), note: '' };
-    this.showErrors = false;
-  }
+  /* ---------------- DELETE ---------------- */
 
   confirmDelete(id: string) {
-    if (!id) { console.warn('Missing id for delete'); return; }
     if (!confirm('Delete this transaction?')) return;
 
-    this.txApi.delete(id).subscribe({
-      next: () => {
-        // optimistic: remove from local list for instant feedback
-        this.transactions = this.transactions.filter(t => t.id !== id);
-        this.computeTotals();
-        this.message = 'Deleted';
-        setTimeout(()=> this.message = '', 1200);
-      },
-      error: (err) => {
-        console.error(err);
-        alert('Delete failed');
-      }
+    this.txApi.delete(id).subscribe(() => {
+      this.transactions = this.transactions.filter(t => t.id !== id);
+      this.applyFilter();
     });
+  }
+
+  /* ---------------- UTIL ---------------- */
+
+  resetForm() {
+    this.editId = null;
+    this.model = {
+      type: 'Expense',
+      category: '',
+      amount: undefined,
+      date: new Date().toISOString().split('T')[0],
+      note: '',
+      budgetType: 'Needs'
+    };
   }
 }

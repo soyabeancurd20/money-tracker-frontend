@@ -5,4 +5,7 @@ export interface Transaction {
   amount: number | null;
   date: string;
   note?: string;
+
+  // 50 / 30 / 20
+  budgetType?: 'Needs' | 'Wants' | 'Savings';
 }
