@@ -414,7 +414,7 @@ monthlyChart: any;
 
   const labels: string[] = [];
   const incomeData: number[] = [];
-  const expenseData: number[] = [];
+  const expenseData: number[] = []; 
 
   const now = new Date();
 
